@@ -3,6 +3,7 @@
 #include<gl/glew.h>
 
 #include"shader.h"
+#include"texture.h"
 #include<GL/freeglut.h>
 //#include<iostream>
 #include<glm/glm.hpp>
@@ -12,6 +13,27 @@
 //#include<string>
 
 
+GLuint VertexArrayID;
+
+glm::mat4 View, Model, Projection;
+
+GLint modelLoc, viewLoc, projLoc;
+
+GLuint lightcolor_loc, materialcolor_loc;
+GLuint lightposLoc;
+GLuint MatrixID;
+glm::mat4 mvp;
+
+GLuint VertexBuffer;
+GLuint VertexBuffer2;
+
+GLuint VAO_2;
+GLuint VBO_2;
+
+GLuint texture1;
+
+
+texture Wood_texture;
 shader shader_main;
 //GLuint g_ShaderProgram = 0;
 //glGenVertexArrays(1, &VertexArrayID);
@@ -26,41 +48,158 @@ int startX, startY, tracking = 0;
 float alpha = 40.0f, beta = 45.0f;
 float r = 5.25f;
 
-// Light attributes
-glm::vec3 lightPos(1.5f, 1.5f, 2.0f);
-
-
-
 
 
 void display1()
 {
+	// Camera matrix
+	View = glm::lookAt(
+		glm::vec3(camX, camY, camZ), // Camera is at (4,3,3), in World Space
+		glm::vec3(0, 0, 0), // and looks at the origin
+		glm::vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
+	);
+
+
+	shader_main.Use();
 	
+	glClearColor(1.0, 0.0, 0.0, 1.0);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	
+	glBindTexture(GL_TEXTURE_2D, texture1);
+	//glActiveTexture(0);
+	glUniform1i(glGetUniformLocation(shader_main.program, "texture_1"), 0);
+
+
+	//glBindVertexArray(VertexArrayID);
+	glBindVertexArray(VAO_2);
+	
+	glDrawArrays(GL_TRIANGLES, 0, 36); // Starting from vertex 0; 3 vertices total -> 1 triangle
+									   //glDisableVertexAttribArray(0);
+	//glBindVertexArray(0);
+	glutSwapBuffers();
 }
 
 
 void init() {
-
+	// Generate 1 buffer, put the resulting identifier in vertexbuffer
 	
+
 	// set the camera position based on its spherical coordinates
 	camX = r * sin(alpha * 3.14f / 180.0f) * cos(beta * 3.14f / 180.0f);
 	camZ = r * cos(alpha * 3.14f / 180.0f) * cos(beta * 3.14f / 180.0f);
 	camY = r *   						     sin(beta * 3.14f / 180.0f);
+
 
 	// some GL settings
 	glEnable(GL_DEPTH_TEST);
 	//glEnable(GL_CULL_FACE);
 	glEnable(GL_MULTISAMPLE);
 	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-	//Not neccessary to be written inside init(),usually written in main()
+	
+
+
+	//So we need three 3D points in order to make a triangle
+	static const GLfloat g_Vertex_Buffer_data[] = {
+		-1.0f,-1.0f,0.0f,
+		1.0f,-1.0f,0.0f,
+		0.0f,1.0f,0.0f,
+	};
+
+	GLfloat cubeVertices[] = {
+		// Positions          // Texture Coords
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+		0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+		0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+		0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+	};
+
+	Wood_texture.loadtexture("wooden_texture.jpg");
+	
+	glGenTextures(1, &texture1);
+	glBindTexture(GL_TEXTURE_2D, texture1);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, Wood_texture.Width, Wood_texture.Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, Wood_texture.Data);
+
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	//glGenerateMipmap(GL_TEXTURE_2D);
+
+	//glBindTexture(GL_TEXTURE_2D, 0);
+	
+	/*
+	glGenVertexArrays(1, &VertexArrayID);
+	glGenBuffers(1, &VertexBuffer);
+	glBindVertexArray(VertexArrayID);
+	glBindBuffer(GL_ARRAY_BUFFER, VertexBuffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(g_Vertex_Buffer_data), g_Vertex_Buffer_data, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+	glEnableVertexAttribArray(0);
+	glBindVertexArray(0);
+	*/
+
+	Projection = glm::perspective(glm::radians(45.0f), (float)640 / (float)480, 0.1f, 100.0f);
+	
+	glGenVertexArrays(1, &VAO_2);
+	glGenBuffers(1, &VBO_2);
+	glBindVertexArray(VAO_2);
+	glBindBuffer(GL_ARRAY_BUFFER,VBO_2);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), cubeVertices, GL_STATIC_DRAW);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(1);
+	glEnableVertexAttribArray(2);
+	glBindVertexArray(0);
+	
+	// Or, for an ortho camera :
+	//glm::mat4 Projection = glm::ortho(-10.0f,10.0f,-10.0f,10.0f,0.0f,100.0f); // In world coordinates
+
+
+
+	// Model matrix : an identity matrix (model will be at the origin)
+	Model = glm::mat4(1.0f);
+	// Our ModelViewProjection : multiplication of our 3 matrices
+	mvp = Projection * View * Model; // Remember, matrix multiplication is the other way around
 
 
 
 }
-//void runMainLoop(int val) {
-//	display1();
-//	glutTimerFunc(1000 / 60, runMainLoop, 0);
-//}
 
 void processKeys(unsigned char key, int xx, int yy)
 {
@@ -173,7 +312,6 @@ int main(int argc, char** argv)
 	}
 	//shader shader_main;
 	shader_main.loadshader("vertex_shader.vert", "fragment_shader.frag");
-
 	init();
 
 	//	Mouse and Keyboard Callbacks
