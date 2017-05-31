@@ -13,6 +13,7 @@
 //#include<string>
 
 
+
 GLuint VertexArrayID;
 
 glm::mat4 View, Model, Projection;
@@ -22,19 +23,21 @@ GLint modelLoc, viewLoc, projLoc;
 GLuint lightcolor_loc, materialcolor_loc;
 GLuint lightposLoc;
 GLuint MatrixID;
-glm::mat4 mvp;
 
 GLuint VertexBuffer;
 GLuint VertexBuffer2;
 
-GLuint VAO_2;
-GLuint VBO_2;
+GLuint VAO_2,vao_floor;
+GLuint VBO_2,vbo_floor;
 
 GLuint texture1;
+GLuint texture_floor;
 
 
-texture Wood_texture;
+texture Wood_texture,floor_texture;
+
 shader shader_main;
+shader shader_floor;
 //GLuint g_ShaderProgram = 0;
 //glGenVertexArrays(1, &VertexArrayID);
 
@@ -59,24 +62,46 @@ void display1()
 		glm::vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
 	);
 
+	Model = glm::mat4();
+	Projection = glm::perspective(glm::radians(45.0f), (float)640 / (float)480, 0.1f, 100.0f);
 
-	shader_main.Use();
-	
 	glClearColor(1.0, 0.0, 0.0, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	shader_main.Use();
 	
-	glBindTexture(GL_TEXTURE_2D, texture1);
-	//glActiveTexture(0);
-	glUniform1i(glGetUniformLocation(shader_main.program, "texture_1"), 0);
-
-
-	//glBindVertexArray(VertexArrayID);
+	glUniformMatrix4fv(glGetUniformLocation(shader_main.program, "view"), 1, GL_FALSE, glm::value_ptr(View));
+	glUniformMatrix4fv(glGetUniformLocation(shader_main.program, "projection"), 1, GL_FALSE, glm::value_ptr(Projection));
+	
+	//cube_vao:
 	glBindVertexArray(VAO_2);
-	
+	glBindTexture(GL_TEXTURE_2D, texture1);
+	glActiveTexture(0);
+	glUniform1i(glGetUniformLocation(shader_main.program, "texture_1"), 0);
+	Model = glm::translate(Model, glm::vec3(1.0f, 0.0f, -1.0f));
+	glUniformMatrix4fv(glGetUniformLocation(shader_main.program, "model"), 1, GL_FALSE, glm::value_ptr(Model));
 	glDrawArrays(GL_TRIANGLES, 0, 36); // Starting from vertex 0; 3 vertices total -> 1 triangle
-									   //glDisableVertexAttribArray(0);
-	//glBindVertexArray(0);
+	Model = glm::translate(Model, glm::vec3(-2.0, 0.0f, 2.0f));
+	glUniformMatrix4fv(glGetUniformLocation(shader_main.program,"model"),1,GL_FALSE,glm::value_ptr(Model));
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+	glBindVertexArray(0);
+	
+	shader_floor.Use();
+
+	glUniformMatrix4fv(glGetUniformLocation(shader_floor.program, "view"), 1, GL_FALSE, glm::value_ptr(View));
+	glUniformMatrix4fv(glGetUniformLocation(shader_floor.program, "projection"), 1, GL_FALSE, glm::value_ptr(Projection));
+
+	//floor_vao:
+	glBindVertexArray(vao_floor);
+	glBindTexture(GL_TEXTURE_2D, texture_floor);
+	glUniform1i(glGetUniformLocation(shader_floor.program,"floor_texture"),0);
+	//Model = glm::translate(Model, glm::vec3(-1.0f, -1.0f, -1.0f));
+	Model = glm::mat4();
+	glUniformMatrix4fv(glGetUniformLocation(shader_floor.program, "model"), 1, GL_FALSE, glm::value_ptr(Model));
+	glDrawArrays(GL_TRIANGLES, 0, 6); // Starting from vertex 0; 3 vertices total -> 1 triangle
+	glBindVertexArray(0);
+
+
 	glutSwapBuffers();
 }
 
@@ -151,6 +176,16 @@ void init() {
 		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
 	};
 
+	GLfloat floor_vertices[] = {
+		5.0f,  -0.5f,  5.0f,  2.0f, 0.0f,
+		-5.0f, -0.5f,  5.0f,  0.0f, 0.0f,
+		-5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
+
+		5.0f,  -0.5f,  5.0f,  2.0f, 0.0f,
+		-5.0f, -0.5f, -5.0f,  0.0f, 2.0f,
+		5.0f,  -0.5f, -5.0f,  2.0f, 2.0f
+	};
+
 	Wood_texture.loadtexture("wooden_texture.jpg");
 	
 	glGenTextures(1, &texture1);
@@ -161,8 +196,21 @@ void init() {
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	//glGenerateMipmap(GL_TEXTURE_2D);
 
-	//glBindTexture(GL_TEXTURE_2D, 0);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+
+	floor_texture.loadtexture("floor.jpg");
+	glGenTextures(1, &texture_floor);
+	glBindTexture(GL_TEXTURE_2D, texture_floor);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, floor_texture.Width, floor_texture.Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, floor_texture.Data);
 	
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	glBindTexture(GL_TEXTURE_2D,0);
 	/*
 	glGenVertexArrays(1, &VertexArrayID);
 	glGenBuffers(1, &VertexBuffer);
@@ -174,8 +222,8 @@ void init() {
 	glBindVertexArray(0);
 	*/
 
-	Projection = glm::perspective(glm::radians(45.0f), (float)640 / (float)480, 0.1f, 100.0f);
 	
+	//Cube VAO
 	glGenVertexArrays(1, &VAO_2);
 	glGenBuffers(1, &VBO_2);
 	glBindVertexArray(VAO_2);
@@ -186,17 +234,22 @@ void init() {
 	glEnableVertexAttribArray(1);
 	glEnableVertexAttribArray(2);
 	glBindVertexArray(0);
+
+	//floor VAO
+	glGenVertexArrays(1, &vao_floor);
+	glGenBuffers(1, &vbo_floor);
+	glBindVertexArray(vao_floor);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo_floor);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(floor_vertices), floor_vertices, GL_STATIC_DRAW);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(1);
+	glEnableVertexAttribArray(2);
+	glBindVertexArray(0);
+
 	
 	// Or, for an ortho camera :
 	//glm::mat4 Projection = glm::ortho(-10.0f,10.0f,-10.0f,10.0f,0.0f,100.0f); // In world coordinates
-
-
-
-	// Model matrix : an identity matrix (model will be at the origin)
-	Model = glm::mat4(1.0f);
-	// Our ModelViewProjection : multiplication of our 3 matrices
-	mvp = Projection * View * Model; // Remember, matrix multiplication is the other way around
-
 
 
 }
@@ -312,6 +365,7 @@ int main(int argc, char** argv)
 	}
 	//shader shader_main;
 	shader_main.loadshader("vertex_shader.vert", "fragment_shader.frag");
+	shader_floor.loadshader("vertexshader_floor.vert", "fragmentshader_floor.frag");
 	init();
 
 	//	Mouse and Keyboard Callbacks

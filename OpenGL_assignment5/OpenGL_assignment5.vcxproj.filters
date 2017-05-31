@@ -37,6 +37,12 @@
     <Text Include="vertex_shader.vert">
       <Filter>Source Files</Filter>
     </Text>
+    <Text Include="fragmentshader_floor.frag">
+      <Filter>Source Files</Filter>
+    </Text>
+    <Text Include="vertexshader_floor.vert">
+      <Filter>Source Files</Filter>
+    </Text>
   </ItemGroup>
   <ItemGroup>
     <Image Include="container2.png">
