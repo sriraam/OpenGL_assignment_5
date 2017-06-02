@@ -7,5 +7,5 @@ uniform sampler2D floor_texture;
 
 void main(){
 color = texture(floor_texture,texture_coords);
-//color = vec4(0.0f,0.0f,0.0f,1.0f);
+//color = vec4(1.0f,0.0f,0.0f,1.0f);
 }

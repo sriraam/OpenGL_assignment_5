@@ -27,17 +27,24 @@ GLuint MatrixID;
 GLuint VertexBuffer;
 GLuint VertexBuffer2;
 
-GLuint VAO_2,vao_floor;
-GLuint VBO_2,vbo_floor;
+GLuint framebuffer;
+
+GLuint VAO_2,vao_floor,vao_screen;
+GLuint VBO_2,vbo_floor,vbo_screen;
 
 GLuint texture1;
 GLuint texture_floor;
+GLuint texture_framebuf;
+
+GLuint renderbuf;
 
 
 texture Wood_texture,floor_texture;
 
 shader shader_main;
 shader shader_floor;
+shader shader_screen;
+
 //GLuint g_ShaderProgram = 0;
 //glGenVertexArrays(1, &VertexArrayID);
 
@@ -55,6 +62,8 @@ float r = 5.25f;
 
 void display1()
 {
+	// draw as wireframe
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	// Camera matrix
 	View = glm::lookAt(
 		glm::vec3(camX, camY, camZ), // Camera is at (4,3,3), in World Space
@@ -65,9 +74,12 @@ void display1()
 	Model = glm::mat4();
 	Projection = glm::perspective(glm::radians(45.0f), (float)640 / (float)480, 0.1f, 100.0f);
 
-	glClearColor(1.0, 0.0, 0.0, 1.0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 
+	glClearColor(0.0f, 1.0f, 0.1f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glEnable(GL_DEPTH_TEST);
+	
 	shader_main.Use();
 	
 	glUniformMatrix4fv(glGetUniformLocation(shader_main.program, "view"), 1, GL_FALSE, glm::value_ptr(View));
@@ -100,8 +112,27 @@ void display1()
 	glUniformMatrix4fv(glGetUniformLocation(shader_floor.program, "model"), 1, GL_FALSE, glm::value_ptr(Model));
 	glDrawArrays(GL_TRIANGLES, 0, 6); // Starting from vertex 0; 3 vertices total -> 1 triangle
 	glBindVertexArray(0);
+	
+	
 
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+	glClearColor(0, 0, 1, 1);
+	//glClearColor(1.1f, 0.1f, 0.1f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glDisable(GL_DEPTH);
+	
+	shader_screen.Use();
+	
+	glBindVertexArray(vao_screen);
+	
+	//glActiveTexture(0);
+	glUniform1f(glGetUniformLocation(shader_screen.program, "screentexture"), 0);
+	glBindTexture(GL_TEXTURE_2D, texture_framebuf);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glBindVertexArray(0);
+	
+	 //glFlush();
 	glutSwapBuffers();
 }
 
@@ -117,10 +148,10 @@ void init() {
 
 
 	// some GL settings
-	glEnable(GL_DEPTH_TEST);
+	
 	//glEnable(GL_CULL_FACE);
-	glEnable(GL_MULTISAMPLE);
-	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	//glEnable(GL_MULTISAMPLE);
+	//glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	
 
 
@@ -186,6 +217,27 @@ void init() {
 		5.0f,  -0.5f, -5.0f,  2.0f, 2.0f
 	};
 
+	GLfloat Quad[] = {
+		/*
+		-1, 1, 0, 0,1,
+		 1, 1, 0, 1,1, 
+		 1,-1, 0, 1,0,
+		 1,-1, 0, 1,0,
+		-1,-1, 0, 0,0,
+		-1, 1, 0, 0,1*/
+
+		// positions   // texCoords
+		- 1.0f,  1.0f,0.0f,  0.0f, 1.0f,
+		-1.0f, -1.0f,0.0f,  0.0f, 0.0f,
+		1.0f, -1.0f,0.0f,  1.0f, 0.0f,
+
+		-1.0f,  1.0f,0.0f,  0.0f, 1.0f,
+		1.0f, -1.0f,0.0f,  1.0f, 0.0f,
+		1.0f,  1.0f,0.0f,  1.0f, 1.0f
+		
+	};
+
+	//wooden texture
 	Wood_texture.loadtexture("wooden_texture.jpg");
 	
 	glGenTextures(1, &texture1);
@@ -198,10 +250,10 @@ void init() {
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 
-
+	//floor texture
 	floor_texture.loadtexture("floor.jpg");
 	glGenTextures(1, &texture_floor);
-	glBindTexture(GL_TEXTURE_2D, texture_floor);
+	glBindTexture(GL_TEXTURE_2D, texture_floor); 
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, floor_texture.Width, floor_texture.Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, floor_texture.Data);
 	
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -211,6 +263,9 @@ void init() {
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
 	glBindTexture(GL_TEXTURE_2D,0);
+
+
+	
 	/*
 	glGenVertexArrays(1, &VertexArrayID);
 	glGenBuffers(1, &VertexBuffer);
@@ -247,7 +302,62 @@ void init() {
 	glEnableVertexAttribArray(2);
 	glBindVertexArray(0);
 
+
+	//Quad VAO
+	glGenVertexArrays(1, &vao_screen);
+	glGenBuffers(1, &vbo_screen);
+	glBindVertexArray(vao_screen);
+	glBindBuffer(GL_ARRAY_BUFFER,vbo_screen);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(Quad), Quad, GL_STATIC_DRAW);
+	glVertexAttribPointer(1, 3, GL_FLOAT,GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)0);
+	glVertexAttribPointer(2, 2, GL_FLOAT,GL_FALSE, 5 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+	glEnableVertexAttribArray(1);
+	glEnableVertexAttribArray(2);
+	glBindVertexArray(0);
+
+
+	//Frame Buffer
+	glGenFramebuffers(1, &framebuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+
+	//texture attachment(it samples)
+	glGenTextures(1, &texture_framebuf);
+	glBindTexture(GL_TEXTURE_2D, texture_framebuf);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 640, 480, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+
+	//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture_framebuf, 0);
+
+	//render attachment(has depth values)
+
+	glGenRenderbuffers(1, &renderbuf);
+	glBindRenderbuffer(GL_RENDERBUFFER, renderbuf);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 640, 480);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, renderbuf);
 	
+	//checking whether the frame buffer is complete
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	glDeleteFramebuffers(1, &framebuffer);
+
+
 	// Or, for an ortho camera :
 	//glm::mat4 Projection = glm::ortho(-10.0f,10.0f,-10.0f,10.0f,0.0f,100.0f); // In world coordinates
 
@@ -366,6 +476,8 @@ int main(int argc, char** argv)
 	//shader shader_main;
 	shader_main.loadshader("vertex_shader.vert", "fragment_shader.frag");
 	shader_floor.loadshader("vertexshader_floor.vert", "fragmentshader_floor.frag");
+	shader_screen.loadshader("vertexshader_screen.vert", "fragmentshader_screen.frag");
+
 	init();
 
 	//	Mouse and Keyboard Callbacks
@@ -378,6 +490,7 @@ int main(int argc, char** argv)
 	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_GLUTMAINLOOP_RETURNS);
 
 	glutDisplayFunc(display1);
+	glutIdleFunc(display1);
 
 	//glutTimerFunc(1000 / 60, runMainLoop, 0);
 

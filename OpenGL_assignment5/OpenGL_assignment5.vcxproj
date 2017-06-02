@@ -157,8 +157,10 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="fragmentshader_floor.frag" />
+    <Text Include="fragmentshader_screen.frag" />
     <Text Include="fragment_shader.frag" />
     <Text Include="vertexshader_floor.vert" />
+    <Text Include="vertexshader_screen.vert" />
     <Text Include="vertex_shader.vert" />
   </ItemGroup>
   <ItemGroup>

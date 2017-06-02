@@ -10,6 +10,7 @@ out vec2 texture_coords;
 
 void main(){
 gl_Position = projection * view * model * vec4(floor_vertex,1);
+//gl_Position =  vec4(floor_vertex,1);
 texture_coords = tex_coords;
 
 }
