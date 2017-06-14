@@ -4,17 +4,22 @@
 
 #include"shader.h"
 #include<GL/freeglut.h>
-//#include<iostream>
 #include<glm/glm.hpp>
 #include<glm/ext.hpp>
-//#include<fstream>
 #include<vector>
-//#include<string>
+
 
 
 shader shader_main;
 //GLuint g_ShaderProgram = 0;
 //glGenVertexArrays(1, &VertexArrayID);
+
+GLuint vao_square;
+GLuint vbo_square;
+
+glm::mat4 Model;
+glm::mat4 View;
+glm::mat4 Projection;
 
 // Camera Position
 float camX, camY, camZ;
@@ -35,24 +40,80 @@ glm::vec3 lightPos(1.5f, 1.5f, 2.0f);
 
 void display1()
 {
-	
+
+	glClearColor(0, 1, 0, 1);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	Projection = glm::perspective(glm::radians(90.0f), (float)640 / (float)480, 0.1f, 100.0f);
+	View = glm::lookAt(glm::vec3(0,0,-5), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+
+	shader_main.Use();
+
+	//head
+	Model = glm::mat4();
+	Model = glm::translate(glm::vec3(0, 2, 0));
+
+	glUniformMatrix4fv(glGetUniformLocation(shader_main.program, "projection"), 1, GL_FALSE, glm::value_ptr(Projection));
+	glUniformMatrix4fv(glGetUniformLocation(shader_main.program, "view"), 1, GL_FALSE, glm::value_ptr(View));
+	glUniformMatrix4fv(glGetUniformLocation(shader_main.program, "model"), 1, GL_FALSE, glm::value_ptr(Model));
+	glBindVertexArray(vao_square);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glBindVertexArray(0);
+
+	glutSwapBuffers();
+
 }
 
 
 void init() {
 
-	
+
 	// set the camera position based on its spherical coordinates
 	camX = r * sin(alpha * 3.14f / 180.0f) * cos(beta * 3.14f / 180.0f);
 	camZ = r * cos(alpha * 3.14f / 180.0f) * cos(beta * 3.14f / 180.0f);
 	camY = r *   						     sin(beta * 3.14f / 180.0f);
 
+
+
 	// some GL settings
 	glEnable(GL_DEPTH_TEST);
 	//glEnable(GL_CULL_FACE);
 	glEnable(GL_MULTISAMPLE);
-	glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	
+	glViewport(0, 0, 640, 480);
+
 	//Not neccessary to be written inside init(),usually written in main()
+
+	GLfloat square[] = {
+     -0.5f,0.5f,
+	  0.5f,0.5f,
+	  0.5f,-0.5f,
+
+	  0.5f,-0.5f,
+	 -0.5f,-0.5f,
+	 -0.5f,0.5f		
+	};
+	/*
+	GLfloat square[] = {
+		-.5f, .5f, -2, 
+		.5, .5f, -2,
+		.5f,-.5f, -2,
+		1,-1, -1,
+		-1,-1, -1,	
+		-1, 1, -1,
+	};*/
+
+
+	//vao square
+	glGenVertexArrays(1,&vao_square);
+	glGenBuffers(1, &vbo_square);
+	glBindVertexArray(vao_square);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo_square);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(square), square, GL_STATIC_DRAW);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 *sizeof(GLfloat), (void*)0);
+	glEnableVertexAttribArray(1);
+	glBindVertexArray(0);
+
 
 
 
