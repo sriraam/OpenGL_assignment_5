@@ -1,7 +1,5 @@
 #pragma once
-//#pragma comment (lib, "glew32s.lib")
-//#define GLEW_STATIC
-//#include <GL/glew.h>
+
 #include <string>
 #include <fstream>
 #include <sstream>
@@ -138,5 +136,6 @@ void shader::loadshader(const std::string& vertexPath, const std::string& fragme
 // Uses the current shader
 
 void shader::Use() {
+	
 	glUseProgram(this->program);
 }
