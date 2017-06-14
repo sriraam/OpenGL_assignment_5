@@ -49,16 +49,59 @@ void display1()
 
 	shader_main.Use();
 
-	//head
-	Model = glm::mat4();
-	Model = glm::translate(glm::vec3(0, 2, 0));
-
 	glUniformMatrix4fv(glGetUniformLocation(shader_main.program, "projection"), 1, GL_FALSE, glm::value_ptr(Projection));
 	glUniformMatrix4fv(glGetUniformLocation(shader_main.program, "view"), 1, GL_FALSE, glm::value_ptr(View));
+
+	//head
+	Model = glm::mat4();
+	Model = glm::translate(glm::vec3(0, 3, 0));
+
+	glUniform3f(glGetUniformLocation(shader_main.program, "colors"),1,0,0);
 	glUniformMatrix4fv(glGetUniformLocation(shader_main.program, "model"), 1, GL_FALSE, glm::value_ptr(Model));
 	glBindVertexArray(vao_square);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	glBindVertexArray(0);
+
+
+	//body
+	Model = glm::mat4();
+	Model = glm::translate(glm::vec3(0, 2, 0));
+	Model += glm::scale(glm::vec3(4, 5, 0));
+
+	glUniform3f(glGetUniformLocation(shader_main.program, "colors"), .2, .2, .2);
+
+	glUniformMatrix4fv(glGetUniformLocation(shader_main.program, "model"), 1, GL_FALSE, glm::value_ptr(Model));
+	glBindVertexArray(vao_square);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glBindVertexArray(0);
+
+
+	//Leg_R
+	Model = glm::mat4();
+	Model = glm::translate(glm::vec3(-1, -3, 0));
+	Model += glm::scale(glm::vec3(.7, 4, 0));
+
+	glUniform3f(glGetUniformLocation(shader_main.program, "colors"), 0, 0, 1);
+
+	glUniformMatrix4fv(glGetUniformLocation(shader_main.program, "model"), 1, GL_FALSE, glm::value_ptr(Model));
+	glBindVertexArray(vao_square);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glBindVertexArray(0);
+
+	//Leg_L
+	Model = glm::mat4();
+	Model = glm::translate(glm::vec3(1, -3, 0));
+	Model += glm::scale(glm::vec3(.7, 4, 0));
+
+	glUniform3f(glGetUniformLocation(shader_main.program, "colors"), 0, 0, 1);
+
+	glUniformMatrix4fv(glGetUniformLocation(shader_main.program, "model"), 1, GL_FALSE, glm::value_ptr(Model));
+	glBindVertexArray(vao_square);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glBindVertexArray(0);
+
+
+
 
 	glutSwapBuffers();
 
