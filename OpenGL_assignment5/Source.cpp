@@ -9,13 +9,13 @@
 #include<vector>
 
 
-
+float theta = 1.0f;
 shader shader_main;
 //GLuint g_ShaderProgram = 0;
 //glGenVertexArrays(1, &VertexArrayID);
 
-GLuint vao_square;
-GLuint vbo_square;
+GLuint vao_square,vao_hand;
+GLuint vbo_square,vbo_hand;
 
 glm::mat4 Model;
 glm::mat4 View;
@@ -100,8 +100,37 @@ void display1()
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	glBindVertexArray(0);
 
+	//Hand_L
+	Model = glm::mat4();
+	//Model *= glm::scale(glm::vec3(.6, 4, 0));
+	Model = glm::translate(glm::vec3(1.5, 1.5, 0));
+	//Model += glm::scale(glm::vec3(.6, 4, 0));
+	Model = glm::rotate(Model, theta, glm::vec3(0,0,1));
+	//Model += glm::scale(glm::vec3(.6, 4, 0));
 
+	glUniform3f(glGetUniformLocation(shader_main.program, "colors"), 1, 0, 1);
 
+	glUniformMatrix4fv(glGetUniformLocation(shader_main.program, "model"), 1, GL_FALSE, glm::value_ptr(Model));
+	glBindVertexArray(vao_hand);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glBindVertexArray(0);
+
+	//Hand_R
+	Model = glm::mat4();
+	//Model *= glm::scale(glm::vec3(.6, 4, 0));
+	Model = glm::translate(glm::vec3(-1.5, 1.5, 0));
+	//Model += glm::scale(glm::vec3(.6, 4, 0));
+	Model = glm::rotate(Model, -theta, glm::vec3(0,0,1));
+
+	//Model += glm::scale(glm::vec3(.6, 4, 0));
+
+	glUniform3f(glGetUniformLocation(shader_main.program, "colors"), 1, 0, 1);
+
+	glUniformMatrix4fv(glGetUniformLocation(shader_main.program, "model"), 1, GL_FALSE, glm::value_ptr(Model));
+	glBindVertexArray(vao_hand);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glBindVertexArray(0);
+	
 
 	glutSwapBuffers();
 
@@ -136,6 +165,15 @@ void init() {
 	 -0.5f,-0.5f,
 	 -0.5f,0.5f		
 	};
+	GLfloat hand[] = {
+		-0.5f,1.0f,
+		0.5f,1.0f,
+		0.5f,-1.0f,
+
+		0.5f,-1.0f,
+		-0.5f,-1.0f,
+		-0.5f,1.0f
+	};
 	/*
 	GLfloat square[] = {
 		-.5f, .5f, -2, 
@@ -157,6 +195,15 @@ void init() {
 	glEnableVertexAttribArray(1);
 	glBindVertexArray(0);
 
+	//vao hand
+	glGenVertexArrays(1, &vao_hand);
+	glGenBuffers(1, &vbo_hand);
+	glBindVertexArray(vao_hand);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo_hand);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(hand), hand, GL_STATIC_DRAW);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (void*)0);
+	glEnableVertexAttribArray(1);
+	glBindVertexArray(0);
 
 
 
@@ -172,6 +219,14 @@ void processKeys(unsigned char key, int xx, int yy)
 
 	case 27:
 		glutLeaveMainLoop();
+		break;
+   
+	case 'd':
+		theta += 0.1f;
+		break;
+
+	case 'a':
+		theta -= 0.1f ;
 		break;
 
 	case 'c':
